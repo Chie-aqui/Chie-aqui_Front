@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ComplaintFilters } from "@/components/complaint-filters"
@@ -9,112 +9,52 @@ import { Search, TrendingUp, Shield, Users, MessageSquare, Building2, ChevronLef
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
-// Mock data expandido para demonstração
-const allComplaints = [
-  {
-    id: 1,
-    title: "Produto com defeito não foi trocado após 3 tentativas",
-    company: "TechStore Brasil",
-    status: "Em análise",
-    date: "2024-01-15",
-    rating: 2,
-    responses: 3,
-    category: "E-commerce",
-    excerpt:
-      "Comprei um smartphone que apresentou defeito na tela após 2 dias de uso. Já tentei trocar 3 vezes mas sempre inventam uma desculpa diferente.",
-    helpful: 12,
-    notHelpful: 2,
-    views: 156,
-  },
-  {
-    id: 2,
-    title: "Cobrança indevida no cartão de crédito sem autorização",
-    company: "Banco Digital Plus",
-    status: "Respondida",
-    date: "2024-01-14",
-    rating: 1,
-    responses: 1,
-    category: "Bancos",
-    excerpt:
-      "Apareceu uma cobrança de R$ 89,90 no meu cartão que eu não reconheço. Entrei em contato mas o atendimento foi péssimo.",
-    helpful: 8,
-    notHelpful: 1,
-    views: 89,
-  },
-  {
-    id: 3,
-    title: "Entrega atrasada sem justificativa há mais de 15 dias",
-    company: "LogiExpress",
-    status: "Resolvida",
-    date: "2024-01-13",
-    rating: 4,
-    responses: 2,
-    category: "Transporte",
-    excerpt:
-      "Meu pedido estava previsto para chegar em 5 dias úteis, mas já se passaram 15 dias e nada. Finalmente resolveram após esta reclamação.",
-    helpful: 15,
-    notHelpful: 0,
-    views: 203,
-  },
-  {
-    id: 4,
-    title: "Atendimento inadequado e funcionários mal educados",
-    company: "MegaVarejo",
-    status: "Pendente",
-    date: "2024-01-12",
-    rating: 2,
-    responses: 0,
-    category: "Varejo",
-    excerpt:
-      "Fui muito mal atendido na loja da Rua das Flores. Os funcionários foram grosseiros e não quiseram resolver meu problema.",
-    helpful: 6,
-    notHelpful: 3,
-    views: 67,
-  },
-  {
-    id: 5,
-    title: "Internet lenta e quedas constantes de conexão",
-    company: "ConectaNet",
-    status: "Em análise",
-    date: "2024-01-11",
-    rating: 1,
-    responses: 1,
-    category: "Telecomunicações",
-    excerpt:
-      "Pago por 100MB mas recebo no máximo 20MB. Além disso, a internet cai várias vezes por dia, principalmente à noite.",
-    helpful: 23,
-    notHelpful: 1,
-    views: 312,
-  },
-  {
-    id: 6,
-    title: "Cancelamento de serviço não processado corretamente",
-    company: "StreamMax",
-    status: "Respondida",
-    date: "2024-01-10",
-    rating: 3,
-    responses: 2,
-    category: "Serviços",
-    excerpt:
-      "Solicitei o cancelamento da assinatura há 2 meses mas continuam cobrando. Já entrei em contato várias vezes.",
-    helpful: 9,
-    notHelpful: 2,
-    views: 134,
-  },
-]
-
-const stats = [
-  { label: "Reclamações Registradas", value: "12.847", icon: MessageSquare },
-  { label: "Empresas Cadastradas", value: "2.156", icon: Building2 },
-  { label: "Problemas Resolvidos", value: "8.923", icon: Shield },
-  { label: "Usuários Ativos", value: "45.231", icon: Users },
-]
+import api from "@/services/api"
 
 export default function HomePage() {
-  const [filteredComplaints, setFilteredComplaints] = useState(allComplaints)
+  const [allComplaints, setAllComplaints] = useState<any[]>([]);
+  const [filteredComplaints, setFilteredComplaints] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1)
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("");
   const complaintsPerPage = 4
+
+  const stats = [
+    { label: "Reclamações Registradas", value: "12.847", icon: MessageSquare },
+    { label: "Empresas Cadastradas", value: "2.156", icon: Building2 },
+    { label: "Problemas Resolvidos", value: "8.923", icon: Shield },
+    { label: "Usuários Ativos", value: "45.231", icon: Users },
+  ]
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [companiesResponse, complaintsResponse] = await Promise.all([
+          api.get('empresas/'),
+          api.get('reclamacoes/')
+        ]);
+        const companies = companiesResponse.data.results || [];
+        const complaints = complaintsResponse.data.results || [];
+
+        setCompanies(companies);
+        setAllComplaints(complaints);
+        setFilteredComplaints(complaints);
+        
+        console.log('Companies:', companies);
+        console.log('Complaints:', complaints);
+      } catch (err) {
+        setError('Failed to fetch data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleFilterChange = (filters: any) => {
     let filtered = allComplaints
@@ -126,6 +66,22 @@ export default function HomePage() {
     setFilteredComplaints(filtered)
     setCurrentPage(1)
   }
+
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/reclamacoes/?search=${searchTerm}`);
+      const complaints = response.data.results || [];
+      setAllComplaints(complaints);
+      setFilteredComplaints(complaints);
+      setCurrentPage(1);
+    } catch (err) {
+      setError("Failed to search complaints");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Paginação
   const totalPages = Math.ceil(filteredComplaints.length / complaintsPerPage)
@@ -165,8 +121,11 @@ export default function HomePage() {
                 <Input
                   placeholder="Busque por empresa, produto ou serviço..."
                   className="pl-12 h-14 text-lg bg-background/80 backdrop-blur"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
-                <Button className="absolute right-2 top-2 h-10">Buscar</Button>
+                <Button className="absolute right-2 top-2 h-10" onClick={handleSearch}>Buscar</Button>
               </div>
             </div>
           </div>
@@ -210,9 +169,23 @@ export default function HomePage() {
 
             {/* Complaints Grid */}
             <div className="grid gap-6 mb-8">
-              {currentComplaints.map((complaint) => (
-                <ComplaintCard key={complaint.id} complaint={complaint} />
-              ))}
+              {currentComplaints.map((apiComplaint: any) => {
+                const cardComplaint = {
+                  id: apiComplaint.id,
+                  title: apiComplaint.titulo,
+                  company: apiComplaint.empresa_razao_social,
+                  status: apiComplaint.status,
+                  date: apiComplaint.data_criacao,
+                  excerpt: apiComplaint.descricao,
+                  rating: 3, 
+                  responses: 0,
+                  category: "Serviços",
+                  helpful: 0,
+                  notHelpful: 0,
+                  views: 0,
+                };
+                return <ComplaintCard key={cardComplaint.id} complaint={cardComplaint} />;
+              })}
             </div>
 
             {/* Pagination */}
