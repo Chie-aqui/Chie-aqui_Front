@@ -54,7 +54,7 @@ export function ComplaintFilters({ onFilterChange }: FilterProps) {
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
             <div className="flex flex-wrap gap-2">
-              {["Pendente", "Em análise", "Respondida", "Resolvida"].map((status) => (
+              {["ABERTA", "Em Andamento", "Fechada"].map((status) => (
                 <Button
                   key={status}
                   variant={activeFilters.includes(status) ? "default" : "outline"}
