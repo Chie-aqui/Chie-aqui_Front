@@ -14,23 +14,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState } from "react"
 import Link from "next/link"
-
-// Mock user data - em uma aplicação real, isso viria de um contexto de autenticação
-const mockUser = {
-  isLoggedIn: false, // Altere para true para testar o estado logado
-  name: "João Silva",
-  email: "joao@email.com",
-  type: "user" as "user" | "company",
-  avatar: "/diverse-user-avatars.png",
-}
+import { useAuth } from "@/hooks/use-auth";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { isAuthenticated, userType, userInfo, logout } = useAuth();
 
   const handleLogout = () => {
-    // Implementar logout
-    console.log("Logout")
-  }
+    logout();
+  };
+
+  const displayName = userInfo?.nome || userInfo?.email || "Usuário";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -61,12 +55,12 @@ export function Header() {
               Sobre
             </Link>
 
-            {mockUser.isLoggedIn ? (
+            {isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href={mockUser.type === "user" ? "/usuario/nova-reclamacao" : "/empresa/dashboard"}>
+                  <Link href={userType === "user" ? "/usuario/nova-reclamacao" : "/empresa/dashboard"}>
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {mockUser.type === "user" ? "Nova Reclamação" : "Dashboard"}
+                    {userType === "user" ? "Nova Reclamação" : "Dashboard"}
                   </Link>
                 </Button>
 
@@ -74,27 +68,27 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={mockUser.avatar || "/placeholder.svg"} alt={mockUser.name} />
-                        <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={userInfo?.avatar || "/placeholder.svg"} alt={displayName} />
+                        <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{mockUser.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{mockUser.email}</p>
+                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{userInfo?.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={mockUser.type === "user" ? "/usuario/perfil" : "/empresa/perfil"}>
+                      <Link href={userType === "user" ? "/usuario/perfil" : "/empresa/perfil"}>
                         <User className="mr-2 h-4 w-4" />
                         <span>Perfil</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={mockUser.type === "user" ? "/usuario/dashboard" : "/empresa/dashboard"}>
+                      <Link href={userType === "user" ? "/usuario/dashboard" : "/empresa/dashboard"}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Dashboard</span>
                       </Link>
@@ -146,23 +140,23 @@ export function Header() {
                 Sobre
               </Link>
 
-              {mockUser.isLoggedIn ? (
+              {isAuthenticated ? (
                 <div className="flex flex-col space-y-2 pt-2 border-t">
                   <div className="flex items-center space-x-2 px-2 py-1">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={mockUser.avatar || "/placeholder.svg"} alt={mockUser.name} />
-                      <AvatarFallback className="text-xs">{mockUser.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={userInfo?.avatar || "/placeholder.svg"} alt={displayName} />
+                      <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{mockUser.name}</span>
+                    <span className="text-sm font-medium">{displayName}</span>
                   </div>
                   <Button variant="ghost" size="sm" className="justify-start" asChild>
-                    <Link href={mockUser.type === "user" ? "/usuario/dashboard" : "/empresa/dashboard"}>
+                    <Link href={userType === "user" ? "/usuario/dashboard" : "/empresa/dashboard"}>
                       <Settings className="h-4 w-4 mr-2" />
                       Dashboard
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start" asChild>
-                    <Link href={mockUser.type === "user" ? "/usuario/perfil" : "/empresa/perfil"}>
+                    <Link href={userType === "user" ? "/usuario/perfil" : "/empresa/perfil"}>
                       <User className="h-4 w-4 mr-2" />
                       Perfil
                     </Link>
