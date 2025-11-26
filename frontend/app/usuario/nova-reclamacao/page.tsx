@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,48 +12,69 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Upload, X, Star, Send, Building2, FileText, Camera } from "lucide-react"
+import { ArrowLeft, Upload, X, Send, Building2, FileText, Camera } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/hooks/use-auth.tsx";
+import api from "@/services/api";
+import { toast } from "@/components/ui/use-toast";
 
-const categories = [
-  "E-commerce",
-  "Bancos",
-  "Telecomunicações",
-  "Varejo",
-  "Serviços",
-  "Transporte",
-  "Alimentação",
-  "Saúde",
-  "Educação",
-  "Outros",
-]
-
-const companies = [
-  "TechStore Brasil",
-  "Banco Digital Plus",
-  "LogiExpress",
-  "MegaVarejo",
-  "ConectaNet",
-  "StreamMax",
-  "FoodDelivery",
-  "HealthCare Plus",
-  "EduOnline",
-]
+// Define Company interface for type safety
+interface Company {
+  display_id: number; // Changed from id to display_id
+  nome_social: string | null;
+  razao_social: string | null;
+}
 
 export default function NewComplaintPage() {
+  const { isAuthenticated, userType, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    company: "",
-    category: "",
+    companyId: "", // Store company ID
+    companyName: "", // Store company name for display
     description: "",
-    rating: 0,
-    attachments: [] as File[],
+    attachments: [] as File[] // For file uploads
   })
 
-  const totalSteps = 3
+  const totalSteps = 2 // Reduced to 2 steps: Basic Info + Description
   const progress = (step / totalSteps) * 100
+
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || userType !== "user")) {
+      router.push("/login");
+    }
+
+    const fetchCompanies = async () => {
+      try {
+        const response = await api.get<{ results: Company[] }>('/empresas/');
+        console.log("Fetched companies:", response.data.results);
+        // Filter out companies without a valid display_id to prevent errors
+        const validCompanies = response.data.results.filter(company =>
+          company && typeof company.display_id === 'number'
+        );
+        setCompanies(validCompanies);
+      } catch (err) {
+        console.error("Failed to fetch companies:", err);
+        toast({
+            title: "Erro",
+            description: "Não foi possível carregar a lista de empresas.",
+            variant: "destructive",
+        });
+      }
+    };
+
+    if (isAuthenticated && userType === "user") {
+        fetchCompanies();
+    }
+
+  }, [isAuthenticated, userType, authLoading, router]);
+
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -68,42 +88,91 @@ export default function NewComplaintPage() {
     }
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setFormData((prev) => ({
-      ...prev,
-      attachments: [...prev.attachments, ...files],
-    }))
-  }
-
-  const removeAttachment = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
-    }))
-  }
-
   const handleSubmit = async () => {
     setIsLoading(true)
-    // Simular envio
-    setTimeout(() => {
-      setIsLoading(false)
-      // Redirecionar para dashboard
-      window.location.href = "/usuario/dashboard"
-    }, 2000)
+    try {
+      const payload = {
+        titulo: formData.title,
+        descricao: formData.description,
+        empresa: parseInt(formData.companyId),
+      };
+      // TODO: Handle attachments upload here if any
+      console.log("Submitting payload:", payload);
+      await api.post('/reclamacoes/', payload);
+      toast({
+        title: "Sucesso!",
+        description: "Reclamação enviada com sucesso.",
+        variant: "default",
+      });
+      router.push("/usuario/dashboard");
+    } catch (err: any) {
+      console.error("Failed to submit complaint:", err);
+      toast({
+        title: "Erro",
+        description: err.response?.data?.detail || "Erro ao enviar reclamação.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
+
+  const handleCompanySelect = (company: Company) => {
+    // Ensure company.display_id is a valid number before proceeding
+    if (company && typeof company.display_id === 'number') {
+      setFormData((prev) => ({ ...prev, companyId: company.display_id.toString(), companyName: company.nome_social || company.razao_social || '' }));
+    } else {
+      // Log an error or handle cases where company.display_id is not a number, if necessary
+      console.error('Invalid company ID:', company);
+      // Optionally, clear the selection or show an error to the user
+      setFormData((prev) => ({ ...prev, companyId: '', companyName: '' }));
+    }
+    setCompanySearchQuery(""); // Clear search input
+    setShowCompanyDropdown(false); // Hide dropdown
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const newFiles = Array.from(event.target.files);
+      setFormData((prev) => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }));
+    }
+  };
+
+  const removeAttachment = (indexToRemove: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, index) => index !== indexToRemove)
+    }));
+  }
+
+  const filteredCompanies = companySearchQuery
+    ? companies.filter(company =>
+        (company.razao_social && company.razao_social.toLowerCase().includes(companySearchQuery.toLowerCase())) ||
+        (company.nome_social && company.nome_social.toLowerCase().includes(companySearchQuery.toLowerCase()))
+      )
+    : companies;
 
   const canProceed = () => {
     switch (step) {
       case 1:
-        return formData.title && formData.company && formData.category
+        return formData.title.trim() !== "" && formData.companyId !== "";
       case 2:
-        return formData.description.length >= 50
-      case 3:
-        return formData.rating > 0
+        return formData.description.length >= 50;
       default:
         return false
     }
+  }
+
+  if (authLoading || (!isAuthenticated && !authLoading)) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p>Carregando...</p>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (
@@ -142,75 +211,77 @@ export default function NewComplaintPage() {
               <CardTitle>
                 {step === 1 && "Informações Básicas"}
                 {step === 2 && "Descreva o Problema"}
-                {step === 3 && "Avaliação e Finalização"}
               </CardTitle>
               <CardDescription>
                 {step === 1 && "Conte-nos sobre a empresa e o tipo de problema"}
                 {step === 2 && "Detalhe o que aconteceu e como gostaria que fosse resolvido"}
-                {step === 3 && "Avalie sua experiência e finalize a reclamação"}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
               {/* Step 1: Basic Information */}
-              {step === 1 && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título da reclamação *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Ex: Produto com defeito não foi trocado"
-                      value={formData.title}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                      maxLength={100}
-                    />
-                    <p className="text-xs text-muted-foreground">{formData.title.length}/100 caracteres</p>
-                  </div>
+              {
+                step === 1 && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Título da reclamação *</Label>
+                      <Input
+                        id="title"
+                        placeholder="Ex: Produto com defeito não foi trocado"
+                        value={formData.title}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                        maxLength={100}
+                      />
+                      <p className="text-xs text-muted-foreground">{formData.title.length}/100 caracteres</p>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Empresa *</Label>
-                    <Select
-                      value={formData.company}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, company: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione ou digite o nome da empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.map((company) => (
-                          <SelectItem key={company} value={company}>
-                            <div className="flex items-center">
-                              <Building2 className="h-4 w-4 mr-2" />
-                              {company}
+                    <div className="space-y-2 relative">
+                      <Label htmlFor="company-search">Empresa *</Label>
+                      <Input
+                        id="company-search"
+                        placeholder="Digite para buscar ou selecionar uma empresa..."
+                        value={companySearchQuery}
+                        onChange={(e) => {
+                          setCompanySearchQuery(e.target.value);
+                          setShowCompanyDropdown(true);
+                          setFormData((prev) => ({ ...prev, companyId: "", companyName: "" })); // Clear selection on search
+                        }}
+                        onFocus={() => setShowCompanyDropdown(true)}
+                        className="mb-2"
+                      />
+                      {companySearchQuery && showCompanyDropdown && (
+                        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                          {filteredCompanies.length > 0 ? (
+                            filteredCompanies.map((company, index) => (
+                              <Button
+                                key={company.display_id ? `${company.display_id}` : index}
+                                variant="ghost"
+                                className="w-full justify-start py-2 px-3 hover:bg-gray-100"
+                                onClick={() => handleCompanySelect(company)}
+                              >
+                                <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                                {company.nome_social || company.razao_social}
+                              </Button>
+                            ))
+                          ) : (
+                            <div className="p-3 text-sm text-muted-foreground">
+                              Nenhuma empresa encontrada.
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          )}
+                        </div>
+                      )}
+                      {formData.companyId && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Empresa selecionada: <span className="font-medium text-gray-800">{formData.companyName}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
+                )
+              }
+              
 
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoria *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a categoria do problema" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Description */}
+              {/* Step 2: Description and Attachments */}
               {step === 2 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -241,7 +312,7 @@ export default function NewComplaintPage() {
                         id="file-upload"
                       />
                       <label htmlFor="file-upload" className="cursor-pointer">
-                        <div className="flex flex-col items-center space-y-2">
+                        <div className="flex flex-col items-center space-x-2">
                           <div className="flex items-center space-x-2">
                             <Upload className="h-5 w-5 text-muted-foreground" />
                             <Camera className="h-5 w-5 text-muted-foreground" />
@@ -256,11 +327,11 @@ export default function NewComplaintPage() {
                     </div>
 
                     {formData.attachments.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-4">
                         <p className="text-sm font-medium">Arquivos anexados:</p>
                         <div className="space-y-2">
                           {formData.attachments.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <div key={file.name + index} className="flex items-center justify-between p-2 bg-muted rounded">
                               <span className="text-sm truncate">{file.name}</span>
                               <Button variant="ghost" size="sm" onClick={() => removeAttachment(index)}>
                                 <X className="h-4 w-4" />
@@ -270,56 +341,6 @@ export default function NewComplaintPage() {
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Rating and Review */}
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <Label>Como você avalia sua experiência com esta empresa? *</Label>
-                    <div className="flex items-center justify-center space-x-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setFormData((prev) => ({ ...prev, rating: star }))}
-                          className="p-1 hover:scale-110 transition-transform"
-                        >
-                          <Star
-                            className={`h-8 w-8 ${
-                              star <= formData.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-center text-sm text-muted-foreground">
-                      {formData.rating === 1 && "Muito insatisfeito"}
-                      {formData.rating === 2 && "Insatisfeito"}
-                      {formData.rating === 3 && "Neutro"}
-                      {formData.rating === 4 && "Satisfeito"}
-                      {formData.rating === 5 && "Muito satisfeito"}
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <h3 className="font-medium mb-2">Resumo da sua reclamação:</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline">{formData.category}</Badge>
-                        <span className="text-muted-foreground">•</span>
-                        <span>{formData.company}</span>
-                      </div>
-                      <p className="font-medium">{formData.title}</p>
-                      <p className="text-muted-foreground line-clamp-3">{formData.description}</p>
-                      {formData.attachments.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          {formData.attachments.length} arquivo(s) anexado(s)
-                        </p>
-                      )}
-                    </div>
                   </div>
                 </div>
               )}

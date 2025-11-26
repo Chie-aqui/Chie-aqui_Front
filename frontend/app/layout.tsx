@@ -1,14 +1,18 @@
+"use client";
+
 import type React from "react"
-import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
+import { AuthProvider } from "@/hooks/use-auth.tsx"; // Import the AuthProvider
 
-export const metadata: Metadata = {
-  title: "Chie Aqui - Plataforma de Reclamações",
-  description: "Sua voz importa. Registre reclamações e encontre soluções.",
-  generator: "v0.app",
-}
+// Metadata can't be exported from a client component, so we keep it separate if needed.
+// For simplicity, if you don't need server-side metadata generation, you can remove it.
+// export const metadata: Metadata = {
+//   title: "Chie Aqui - Plataforma de Reclamações",
+//   description: "Sua voz importa. Registre reclamações e encontre soluções.",
+//   generator: "v0.app",
+// }
 
 export default function RootLayout({
   children,
@@ -18,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`font-sans antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
-        <Analytics />
+        <AuthProvider> {/* Wrap the entire application with the AuthProvider */}
+          <Suspense fallback={null}>{children}</Suspense>
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   )

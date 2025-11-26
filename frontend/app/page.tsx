@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import api from "@/services/api"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function HomePage() {
+  const { userInfo } = useAuth(); // Importa userInfo
   const [allComplaints, setAllComplaints] = useState<any[]>([]);
   const [filteredComplaints, setFilteredComplaints] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1)
@@ -28,31 +30,31 @@ export default function HomePage() {
     { label: "Usuários Ativos", value: "45.231", icon: Users },
   ]
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [companiesResponse, complaintsResponse] = await Promise.all([
+        api.get('empresas/'),
+        api.get('reclamacoes/')
+      ]);
+      const companies = companiesResponse.data.results || [];
+      const complaints = complaintsResponse.data.results || [];
+
+      setCompanies(companies);
+      setAllComplaints(complaints);
+      setFilteredComplaints(complaints);
+      
+      console.log('Companies:', companies);
+      console.log('Complaints:', complaints);
+    } catch (err) {
+      setError('Failed to fetch data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [companiesResponse, complaintsResponse] = await Promise.all([
-          api.get('empresas/'),
-          api.get('reclamacoes/')
-        ]);
-        const companies = companiesResponse.data.results || [];
-        const complaints = complaintsResponse.data.results || [];
-
-        setCompanies(companies);
-        setAllComplaints(complaints);
-        setFilteredComplaints(complaints);
-        
-        console.log('Companies:', companies);
-        console.log('Complaints:', complaints);
-      } catch (err) {
-        setError('Failed to fetch data');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -170,21 +172,19 @@ export default function HomePage() {
             {/* Complaints Grid */}
             <div className="grid gap-6 mb-8">
               {currentComplaints.map((apiComplaint: any) => {
+                const isUserComplaintOwner = userInfo?.usuario?.id === apiComplaint.usuario_consumidor; 
                 const cardComplaint = {
                   id: apiComplaint.id,
-                  title: apiComplaint.titulo,
-                  company: apiComplaint.empresa_razao_social,
+                  titulo: apiComplaint.titulo,
+                  descricao: apiComplaint.descricao,
                   status: apiComplaint.status,
-                  date: apiComplaint.data_criacao,
-                  excerpt: apiComplaint.descricao,
-                  rating: 3, 
-                  responses: 0,
-                  category: "Serviços",
-                  helpful: 0,
-                  notHelpful: 0,
-                  views: 0,
+                  data_criacao: apiComplaint.data_criacao,
+                  usuario_consumidor_nome: apiComplaint.usuario_consumidor_nome,
+                  empresa_razao_social: apiComplaint.empresa_razao_social,
+                  resposta: apiComplaint.resposta,
+                  isUserComplaintOwner: isUserComplaintOwner, // Passa a nova prop
                 };
-                return <ComplaintCard key={cardComplaint.id} complaint={cardComplaint} />;
+                return <ComplaintCard key={cardComplaint.id} complaint={cardComplaint} onStatusChange={fetchData} />;
               })}
             </div>
 

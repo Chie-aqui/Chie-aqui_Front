@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,22 +11,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { User, Building2, Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import api from "@/services/api" // Import the axios instance
+import api from "@/services/api"
+import { useAuth } from "@/hooks/use-auth" // Import the useAuth hook
 
-// Define types for API responses
-interface UserLoginResponse {
+// Define types for API responses to match backend structure
+interface LoginResponse {
   message: string;
   token: string;
-  usuario_consumidor?: { id: number; email: string; /* Add other consumer fields as needed */ };
-  usuario_empresa?: { id: number; email: string; nome: string; /* Add other company fields as needed */ };
-}
-
-interface LoginError {
-  detail?: string;
-  error?: string; // Backend also returns 'error' key
+  usuario_consumidor?: any;
+  usuario_empresa?: any;
 }
 
 export default function LoginPage() {
+  const { login } = useAuth(); // Use the login function from our auth context
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState<"user" | "company">("user")
   const [isLoading, setIsLoading] = useState(false)
@@ -39,45 +36,31 @@ export default function LoginPage() {
 
     const form = e.target as HTMLFormElement
     const formData = new FormData(form)
-    const loginData = Object.fromEntries(formData.entries()); // Convert FormData to plain object
+    const loginData = Object.fromEntries(formData.entries());
 
+    // Ensure the password field name is 'senha' for company as well
+    if (userType === 'company' && loginData.password) {
+      loginData.senha = loginData.password;
+      delete loginData.password;
+    }
+    
     try {
-      let apiEndpoint = ''
-      if (userType === "user") {
-        apiEndpoint = `/consumidores/login/`
-      } else {
-        apiEndpoint = `/empresas/login/`
-      }
-
-      const response = await api.post<UserLoginResponse>(apiEndpoint, loginData)
+      const apiEndpoint = userType === "user" ? `/consumidores/login/` : `/empresas/login/`;
+      const response = await api.post<LoginResponse>(apiEndpoint, loginData);
       const { token, usuario_consumidor, usuario_empresa } = response.data;
 
-      // Determine the actual user type based on the successful login response
-      let actualUserType: "user" | "company";
-      if (userType === "user" && usuario_consumidor) {
-        actualUserType = "user";
-      } else if (userType === "company" && usuario_empresa) {
-        actualUserType = "company";
+      if (token && (usuario_consumidor || usuario_empresa)) {
+        // Call the central login function to set the auth state globally
+        login(token, userType, usuario_consumidor || usuario_empresa);
       } else {
-        throw new Error("Invalid user type in response.");
-      }
-
-      // Store token and user info in localStorage
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userType', actualUserType);
-      localStorage.setItem('userInfo', JSON.stringify(usuario_consumidor || usuario_empresa));
-      
-      if (actualUserType === "user") {
-        window.location.href = "/usuario/dashboard";
-      } else {
-        window.location.href = "/empresa/dashboard";
+        throw new Error("Token ou informações do usuário ausentes na resposta.");
       }
 
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.error) {
         setLoginError(error.response.data.error);
       } else {
-        setLoginError(error.message);
+        setLoginError("Ocorreu um erro desconhecido. Tente novamente.");
       }
       console.error("Login error:", error);
     } finally {
@@ -105,10 +88,9 @@ export default function LoginPage() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* User Type Selector */}
               <Tabs value={userType} onValueChange={(value) => {
                 setUserType(value as "user" | "company")
-                setLoginError(null) // Clear error when changing tab
+                setLoginError(null)
               }}>
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="user" className="flex items-center gap-2">
@@ -167,15 +149,8 @@ export default function LoginPage() {
                       </div>
                     )}
 
-                    <Button type="submit" className="w-full" disabled={isLoading} form="user-login-form">
-                      {isLoading ? (
-                        "Entrando..."
-                      ) : (
-                        <>
-                          Entrar
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Entrando..." : <>Entrar<ArrowRight className="ml-2 h-4 w-4" /></>}
                     </Button>
                   </form>
                 </TabsContent>
@@ -233,15 +208,8 @@ export default function LoginPage() {
                       </div>
                     )}
 
-                    <Button type="submit" className="w-full" disabled={isLoading} form="company-login-form">
-                      {isLoading ? (
-                        "Entrando..."
-                      ) : (
-                        <>
-                          Entrar como Empresa
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Entrando..." : <>Entrar como Empresa<ArrowRight className="ml-2 h-4 w-4" /></>}
                     </Button>
                   </form>
                 </TabsContent>

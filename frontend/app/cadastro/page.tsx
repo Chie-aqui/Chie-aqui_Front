@@ -14,8 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { User, Building2, Eye, EyeOff, Mail, Lock, UserIcon, FileText, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import api from "@/services/api" // Import the axios instance
-import { useAuth } from "@/hooks/use-auth"; // Import useAuth hook
+import api from "@/services/api" 
+import { useAuth } from "@/hooks/use-auth"; 
 
 // Define types for API responses
 interface SignupResponse {
