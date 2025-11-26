@@ -28,6 +28,7 @@ interface Reclamation {
   descricao: string;
   status: string;
   data_criacao: string;
+  usuario_consumidor_nome: string;
   empresa_razao_social: string;
   resposta?: ResponseInfo | null; // Add optional response field
 }

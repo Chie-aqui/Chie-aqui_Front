@@ -184,7 +184,7 @@ export default function HomePage() {
                   resposta: apiComplaint.resposta,
                   isUserComplaintOwner: isUserComplaintOwner, // Passa a nova prop
                 };
-                return <ComplaintCard key={cardComplaint.id} complaint={cardComplaint} onStatusChange={fetchData} />;
+                return <ComplaintCard key={cardComplaint.id} complaint={cardComplaint} />;
               })}
             </div>
 

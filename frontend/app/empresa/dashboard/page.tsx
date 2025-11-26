@@ -36,6 +36,7 @@ interface Complaint {
     status: string;
     data_criacao: string;
     usuario_consumidor_nome: string;
+    empresa_razao_social: string;
     resposta?: {
       id: number;
       descricao: string;
@@ -184,7 +185,7 @@ export default function CompanyDashboard() {
                 {complaints.length > 0 ? (
                     <div className="space-y-4">
                     {complaints.map((complaint) => (
-                        <ComplaintCard key={complaint.id} complaint={complaint} userType={userType} />
+                        <ComplaintCard key={complaint.id} complaint={complaint} userType={userType ?? undefined} />
                     ))}
                     </div>
                 ) : (
