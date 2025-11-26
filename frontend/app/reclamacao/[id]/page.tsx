@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { ArrowLeft, UserIcon, Calendar, MessageSquare, AlertCircle } from "lucide-react";
+import { ArrowLeft, UserIcon, Calendar, MessageSquare, AlertCircle, Download } from "lucide-react";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -20,6 +20,12 @@ interface ResponseInfo {
   descricao: string;
   data_criacao: string;
   status_resolucao: string;
+}
+
+// Interface for individual file attachments
+interface Arquivo {
+  arquivo: string; // URL to the file
+  nome_arquivo: string; // Original name of the file
 }
 
 interface Complaint {
@@ -31,6 +37,7 @@ interface Complaint {
   usuario_consumidor_nome: string;
   empresa_razao_social: string;
   resposta?: ResponseInfo | null;
+  arquivos?: Arquivo[]; // Optional array of attachments
 }
 
 function getStatusColor(status: string) {
@@ -225,6 +232,38 @@ export default function ComplaintDetailPage() { // Removed params prop
               <p className="text-gray-700 whitespace-pre-line">{complaint.descricao}</p>
             </CardContent>
           </Card>
+
+          {/* Attachments Section */}
+          {complaint.arquivos && complaint.arquivos.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-xl">Anexos</CardTitle>
+                <CardDescription>
+                  Arquivos anexados a esta reclamação.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                {complaint.arquivos.map((arquivo) => (
+                  <Button
+                    key={arquivo.arquivo}
+                    variant="outline"
+                    className="justify-start"
+                    asChild
+                  >
+                    <a
+                      href={arquivo.arquivo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {arquivo.nome_arquivo}
+                    </a>
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {complaint.resposta && isValidDate(complaint.resposta.data_criacao) && (
             <Card className="mb-6">

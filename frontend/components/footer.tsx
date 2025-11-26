@@ -1,3 +1,6 @@
+import Image from "next/image";
+
+
 export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
@@ -5,10 +8,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground font-bold text-xs">
-                CA
-              </div>
-              <span className="font-bold text-primary">Chie Aqui</span>
+              <Image
+                  src="/chie_aqui_logo.png"  // caminho relativo à pasta public
+                  alt="Logo"
+                  width={96}                // equivalente a h-8
+                  height={96}               // equivalente a w-8
+                  className="rounded-lg object-cover"
+                />
             </div>
             <p className="text-sm text-muted-foreground">
               Sua voz importa. Conectamos consumidores e empresas para soluções eficazes.
@@ -85,7 +91,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 Chie Aqui. Todos os direitos reservados.</p>
+          <p>&copy; 2025 Chie Aqui. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

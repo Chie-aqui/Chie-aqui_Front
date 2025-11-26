@@ -89,22 +89,31 @@ export default function NewComplaintPage() {
   }
 
   const handleSubmit = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
+    
+    // Use FormData to support file uploads
+    const submissionData = new FormData();
+    submissionData.append('titulo', formData.title);
+    submissionData.append('descricao', formData.description);
+    submissionData.append('empresa', formData.companyId);
+
+    // Append each file to the FormData object
+    formData.attachments.forEach((file) => {
+      submissionData.append('arquivos', file);
+    });
+
     try {
-      const payload = {
-        titulo: formData.title,
-        descricao: formData.description,
-        empresa: parseInt(formData.companyId),
-      };
-      // TODO: Handle attachments upload here if any
-      console.log("Submitting payload:", payload);
-      await api.post('/reclamacoes/', payload);
+      // The Content-Type header will be set automatically by the browser
+      // to 'multipart/form-data' when sending a FormData object.
+      await api.post('/reclamacoes/', submissionData);
+      
       toast({
         title: "Sucesso!",
         description: "Reclamação enviada com sucesso.",
         variant: "default",
       });
       router.push("/usuario/dashboard");
+
     } catch (err: any) {
       console.error("Failed to submit complaint:", err);
       toast({

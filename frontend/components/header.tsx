@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
+import Image from "next/image";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,10 +37,13 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              CA
-            </div>
-            <span className="text-xl font-bold text-primary">Chie Aqui</span>
+            <Image
+                src="/chie_aqui_logo.png"  
+                alt="Logo"
+                width={72}                
+                height={72}               
+                className="rounded-lg object-cover"
+              />
           </Link>
 
           {/* Search Bar - Desktop */}
