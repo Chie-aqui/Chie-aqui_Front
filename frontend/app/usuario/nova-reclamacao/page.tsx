@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, Upload, X, Send, Building2, FileText, Camera } from "lucide-react"
 import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth.tsx";
+import { useAuth } from "@/hooks/use-auth";
 import api from "@/services/api";
 import { toast } from "@/components/ui/use-toast";
 

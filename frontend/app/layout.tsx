@@ -4,7 +4,7 @@ import type React from "react"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
-import { AuthProvider } from "@/hooks/use-auth.tsx"; // Import the AuthProvider
+import { AuthProvider } from "@/hooks/use-auth";
 
 // Metadata can't be exported from a client component, so we keep it separate if needed.
 // For simplicity, if you don't need server-side metadata generation, you can remove it.

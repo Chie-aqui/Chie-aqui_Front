@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { useAuth } from "@/hooks/use-auth.tsx";
+import { useAuth } from "@/hooks/use-auth";
 import api from "@/services/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ShieldAlert, Info, ArrowLeft, Building2, Mail, FileText, UserIcon, MessageSquare, AlertCircle } from "lucide-react";
