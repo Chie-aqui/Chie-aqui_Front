@@ -106,7 +106,11 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button size="lg" className="text-lg px-8">
+              <Button
+                size="lg"
+                className="text-lg px-8"
+                onClick={() => (window.location.href = "/usuario/nova-reclamacao")}
+              >
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Fazer Reclamação
               </Button>
@@ -237,12 +241,22 @@ export default function HomePage() {
               Junte-se a milhares de consumidores que já usam o Chie Aqui para resolver seus problemas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8">
-                Criar Conta Gratuita
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
-                Sou uma Empresa
-              </Button>
+               <Button
+                  size="lg"
+                  className="text-lg px-8"
+                  onClick={() => (window.location.href = "/login")}
+                >
+                  Criar Conta Gratuita
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 bg-transparent"
+                  onClick={() => (window.location.href = "/login")}
+                >
+                  Sou uma Empresa
+                </Button>
             </div>
           </div>
         </section>

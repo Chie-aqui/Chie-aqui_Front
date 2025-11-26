@@ -9,10 +9,10 @@ export function Footer() {
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Image
-                  src="/chie_aqui_logo.png"  // caminho relativo à pasta public
+                  src="/chie_aqui_logo.png"  
                   alt="Logo"
-                  width={96}                // equivalente a h-8
-                  height={96}               // equivalente a w-8
+                  width={96}                
+                  height={96}             
                   className="rounded-lg object-cover"
                 />
             </div>
@@ -25,7 +25,7 @@ export function Footer() {
             <h4 className="font-semibold">Para Consumidores</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="/reclamar" className="hover:text-primary transition-colors">
+                <a href="/usuario/nova-reclamacao" className="hover:text-primary transition-colors">
                   Fazer Reclamação
                 </a>
               </li>
@@ -35,9 +35,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/ranking" className="hover:text-primary transition-colors">
-                  Ranking
-                </a>
+                
               </li>
             </ul>
           </div>
@@ -46,7 +44,7 @@ export function Footer() {
             <h4 className="font-semibold">Para Empresas</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="/empresa/cadastro" className="hover:text-primary transition-colors">
+                <a href="/cadastro" className="hover:text-primary transition-colors">
                   Cadastrar Empresa
                 </a>
               </li>
@@ -56,9 +54,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/planos" className="hover:text-primary transition-colors">
-                  Planos
-                </a>
+                
               </li>
             </ul>
           </div>
@@ -67,22 +63,22 @@ export function Footer() {
             <h4 className="font-semibold">Suporte</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="/ajuda" className="hover:text-primary transition-colors">
+                <a href="" className="hover:text-primary transition-colors">
                   Central de Ajuda
                 </a>
               </li>
               <li>
-                <a href="/contato" className="hover:text-primary transition-colors">
+                <a href="" className="hover:text-primary transition-colors">
                   Contato
                 </a>
               </li>
               <li>
-                <a href="/termos" className="hover:text-primary transition-colors">
+                <a href="" className="hover:text-primary transition-colors">
                   Termos de Uso
                 </a>
               </li>
               <li>
-                <a href="/privacidade" className="hover:text-primary transition-colors">
+                <a href="" className="hover:text-primary transition-colors">
                   Privacidade
                 </a>
               </li>

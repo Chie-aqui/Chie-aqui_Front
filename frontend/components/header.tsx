@@ -12,17 +12,82 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
+import api from "@/services/api";
+
+interface CompanySuggestion {
+  display_id: number;
+  razao_social: string;
+  nome_social: string | null;
+}
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [companySearchTerm, setCompanySearchTerm] = useState("");
+  const [companySuggestions, setCompanySuggestions] = useState<CompanySuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { isAuthenticated, userType, userInfo, logout } = useAuth();
+  const router = useRouter();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleCompanySearch = () => {
+    if (companySearchTerm.trim()) {
+      router.push(`/empresas/search?q=${companySearchTerm}`);
+      setCompanySearchTerm(""); // Clear search term after search
+      setCompanySuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const fetchCompanySuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setCompanySuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const response = await api.get(`/empresas/?search=${query}`);
+      setCompanySuggestions(response.data.results || []);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error fetching company suggestions:", error);
+      setCompanySuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    if (companySearchTerm) {
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchCompanySuggestions(companySearchTerm);
+      }, 300); // Debounce for 300ms
+    } else {
+      setCompanySuggestions([]);
+      setShowSuggestions(false);
+    }
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [companySearchTerm]);
+
+  const handleSuggestionClick = (companyId: number) => {
+    router.push(`/empresas/${companyId}`);
+    setCompanySearchTerm("");
+    setCompanySuggestions([]);
+    setShowSuggestions(false);
   };
 
   const displayName =
@@ -47,14 +112,30 @@ export function Header() {
           </Link>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar empresas ou reclamações..."
-                className="pl-10 bg-muted/50"
-              />
-            </div>
+          <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar empresas..."
+              className="pl-10 bg-muted/50"
+              value={companySearchTerm}
+              onChange={(e) => setCompanySearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCompanySearch()}
+              onFocus={() => companySearchTerm && companySuggestions.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+            />
+            {companySuggestions.length > 0 && (
+              <div className="absolute top-full left-0 w-full bg-background border rounded-md shadow-lg mt-1 z-10">
+                {companySuggestions.map((company) => (
+                  <div
+                    key={company.display_id}
+                    className="px-4 py-2 hover:bg-muted cursor-pointer"
+                    onMouseDown={() => handleSuggestionClick(company.display_id)}
+                  >
+                    {company.razao_social || company.nome_social}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Navigation - Desktop */}
@@ -189,9 +270,27 @@ export function Header() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar empresas ou reclamações..."
+                placeholder="Buscar empresas..."
                 className="pl-10 bg-muted/50"
+                value={companySearchTerm}
+                onChange={(e) => setCompanySearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCompanySearch()}
+                onFocus={() => companySearchTerm && companySuggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
               />
+              {showSuggestions && companySuggestions.length > 0 && (
+                <div className="absolute top-full left-0 w-full bg-background border rounded-md shadow-lg mt-1 z-10">
+                  {companySuggestions.map((company) => (
+                    <div
+                      key={company.display_id}
+                      className="px-4 py-2 hover:bg-muted cursor-pointer"
+                      onMouseDown={() => handleSuggestionClick(company.display_id)}
+                    >
+                      {company.razao_social || company.nome_social}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <nav className="flex flex-col space-y-3">
